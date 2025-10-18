@@ -7,6 +7,8 @@ import { CalificacionesComponent } from './components/calificaciones/calificacio
 import { LoginComponent } from './components/auth/login/login';
 import { DashboardComponent } from './components/dashboard/dashboard';
 import { MainLayoutComponent } from './components/layout/main-layout/main-layout';
+import { EstudiantesComponent } from './components/estudiantes/estudiantes';
+import { PeriodosComponent } from './components/periodos/periodos';
 import { authGuard } from './guards/auth-guard';
 
 export const routes: Routes = [
@@ -22,6 +24,10 @@ export const routes: Routes = [
         component: DashboardComponent
       },
       {
+        path: 'estudiantes',
+        component: EstudiantesComponent
+      },
+      {
         path: 'personal',
         component: PersonalComponent
       },
@@ -33,6 +39,10 @@ export const routes: Routes = [
       {
         path: 'materias',
         component: MateriasComponent
+      },
+      {
+        path: 'periodos',
+        component: PeriodosComponent
       },
       {
         path: 'institucion',

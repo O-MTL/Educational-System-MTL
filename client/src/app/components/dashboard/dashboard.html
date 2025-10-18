@@ -26,56 +26,71 @@
   <!-- Dashboard Content -->
   <div class="dashboard-content">
     <div class="welcome-section">
-      <h1>Bienvenido, {{ currentUser?.username }}</h1>
-      <p>Gestión de la Plataforma Educativa</p>
+      <h1>{{ getDashboardTitle() }}</h1>
+      <p>{{ getDashboardSubtitle() }}</p>
     </div>
 
     <!-- Dashboard Cards -->
-    <mat-grid-list cols="4" rowHeight="200px" gutterSize="16px" class="dashboard-grid">
-      <mat-grid-tile *ngFor="let card of dashboardCards" class="dashboard-tile">
-        <mat-card class="dashboard-card" [class]="'card-' + card.color" (click)="navigateTo(card.route)">
-          <mat-card-content class="card-content">
-            <div class="card-icon">
-              <mat-icon [class]="'icon-' + card.color">{{ card.icon }}</mat-icon>
-            </div>
-            <h3 class="card-title">{{ card.title }}</h3>
-          </mat-card-content>
-        </mat-card>
-      </mat-grid-tile>
-    </mat-grid-list>
+    <div class="cards-section">
+      <h2>Accesos Rápidos</h2>
+      <mat-grid-list cols="4" rowHeight="200px" gutterSize="16px" class="dashboard-grid">
+        <mat-grid-tile *ngFor="let card of dashboardCards" class="dashboard-tile">
+          <mat-card class="dashboard-card" [class]="'card-' + card.color" (click)="navigateTo(card.route)">
+            <mat-card-content class="card-content">
+              <div class="card-icon">
+                <mat-icon [class]="'icon-' + card.color">{{ card.icon }}</mat-icon>
+              </div>
+              <h3 class="card-title">{{ card.title }}</h3>
+              <p class="card-description">{{ card.description }}</p>
+            </mat-card-content>
+          </mat-card>
+        </mat-grid-tile>
+      </mat-grid-list>
+    </div>
 
-    <!-- Quick Stats (if admin) -->
-    <div *ngIf="currentUser?.rol === 'Administrador'" class="stats-section">
-      <h2>Estadísticas Rápidas</h2>
+    <!-- Quick Stats -->
+    <div class="stats-section">
+      <h2>Información Rápida</h2>
       <div class="stats-grid">
-        <mat-card class="stat-card">
+        <mat-card *ngFor="let stat of quickStats" class="stat-card">
           <mat-card-content>
-            <div class="stat-number">150</div>
-            <div class="stat-label">Estudiantes</div>
-          </mat-card-content>
-        </mat-card>
-
-        <mat-card class="stat-card">
-          <mat-card-content>
-            <div class="stat-number">25</div>
-            <div class="stat-label">Docentes</div>
-          </mat-card-content>
-        </mat-card>
-
-        <mat-card class="stat-card">
-          <mat-card-content>
-            <div class="stat-number">12</div>
-            <div class="stat-label">Grados</div>
-          </mat-card-content>
-        </mat-card>
-
-        <mat-card class="stat-card">
-          <mat-card-content>
-            <div class="stat-number">45</div>
-            <div class="stat-label">Materias</div>
+            <div class="stat-icon">
+              <mat-icon [class]="'icon-' + stat.color">{{ stat.icon }}</mat-icon>
+            </div>
+            <div class="stat-number">{{ stat.value }}</div>
+            <div class="stat-label">{{ stat.label }}</div>
           </mat-card-content>
         </mat-card>
       </div>
+    </div>
+
+    <!-- Role Specific Functions -->
+    <div class="functions-section">
+      <h2>Funciones Específicas</h2>
+      <div class="functions-grid">
+        <mat-card *ngFor="let function of getRoleSpecificFunctions()" class="function-card" (click)="function.action()">
+          <mat-card-content>
+            <h3 class="function-title">{{ function.title }}</h3>
+            <p class="function-description">{{ function.description }}</p>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="activities-section">
+      <h2>Actividad Reciente</h2>
+      <mat-card class="activities-card">
+        <mat-card-content>
+          <div *ngFor="let activity of recentActivities" class="activity-item">
+            <mat-icon class="activity-icon">{{ activity.icon }}</mat-icon>
+            <div class="activity-content">
+              <div class="activity-action">{{ activity.action }}</div>
+              <div class="activity-time">{{ activity.time }}</div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
     </div>
   </div>
 </div>
