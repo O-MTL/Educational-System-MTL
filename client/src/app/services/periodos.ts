@@ -1,92 +1,73 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Periodo, PeriodoCalificacion } from '../models/periodo.interface';
+import { map } from 'rxjs/operators';
+import { Periodo } from '../models/periodo.interface';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PeriodosService {
-  private apiUrl = 'http://localhost:3000/api/periodos';
+  private apiUrl = 'http://localhost:8000/api/periodos/';
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   // Obtener todos los períodos
   getPeriodos(): Observable<Periodo[]> {
-    return this.http.get<Periodo[]>(this.apiUrl);
+    return this.http.get<{results: Periodo[], count: number, next: string | null, previous: string | null}>(this.apiUrl)
+      .pipe(
+        map(response => {
+          const periodos = response.results || [];
+          // Convertir fechas de string a Date
+          return periodos.map(p => ({
+            ...p,
+            fechaInicio: p.fechaInicio ? new Date(p.fechaInicio) : new Date(),
+            fechaFin: p.fechaFin ? new Date(p.fechaFin) : new Date()
+          }));
+        })
+      );
   }
 
   // Obtener período por ID
   getPeriodo(id: number): Observable<Periodo> {
-    return this.http.get<Periodo>(`${this.apiUrl}/${id}`);
+    return this.http.get<Periodo>(`${this.apiUrl}${id}/`).pipe(
+      map(p => ({
+        ...p,
+        fechaInicio: p.fechaInicio ? new Date(p.fechaInicio) : new Date(),
+        fechaFin: p.fechaFin ? new Date(p.fechaFin) : new Date()
+      }))
+    );
   }
 
   // Crear nuevo período
-  createPeriodo(periodo: Periodo): Observable<Periodo> {
-    return this.http.post<Periodo>(this.apiUrl, periodo);
+  createPeriodo(periodo: Partial<Periodo>): Observable<Periodo> {
+    const data: any = {
+      nombre: periodo.nombre,
+      fecha_inicio: periodo.fechaInicio ? this.formatDate(periodo.fechaInicio) : null,
+      fecha_fin: periodo.fechaFin ? this.formatDate(periodo.fechaFin) : null
+    };
+    return this.http.post<Periodo>(this.apiUrl, data);
   }
 
   // Actualizar período
-  updatePeriodo(id: number, periodo: Periodo): Observable<Periodo> {
-    return this.http.put<Periodo>(`${this.apiUrl}/${id}`, periodo);
+  updatePeriodo(id: number, periodo: Partial<Periodo>): Observable<Periodo> {
+    const data: any = {
+      nombre: periodo.nombre,
+      fecha_inicio: periodo.fechaInicio ? this.formatDate(periodo.fechaInicio) : null,
+      fecha_fin: periodo.fechaFin ? this.formatDate(periodo.fechaFin) : null
+    };
+    return this.http.put<Periodo>(`${this.apiUrl}${id}/`, data);
   }
 
   // Eliminar período
   deletePeriodo(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    return this.http.delete<void>(`${this.apiUrl}${id}/`);
   }
 
-  // Obtener período activo
-  getPeriodoActivo(): Observable<Periodo> {
-    return this.http.get<Periodo>(`${this.apiUrl}/activo`);
-  }
-
-  // Obtener períodos por año
-  getPeriodosByAño(año: number): Observable<Periodo[]> {
-    return this.http.get<Periodo[]>(`${this.apiUrl}/año/${año}`);
-  }
-
-  // Activar período
-  activarPeriodo(id: number): Observable<Periodo> {
-    return this.http.patch<Periodo>(`${this.apiUrl}/${id}/activar`, {});
-  }
-
-  // Finalizar período
-  finalizarPeriodo(id: number): Observable<Periodo> {
-    return this.http.patch<Periodo>(`${this.apiUrl}/${id}/finalizar`, {});
-  }
-}
-
-@Injectable({
-  providedIn: 'root'
-})
-export class PeriodoCalificacionesService {
-  private apiUrl = 'http://localhost:3000/api/periodo-calificaciones';
-
-  constructor(private http: HttpClient) { }
-
-  // Obtener calificaciones por período
-  getCalificacionesByPeriodo(periodoId: number): Observable<PeriodoCalificacion[]> {
-    return this.http.get<PeriodoCalificacion[]>(`${this.apiUrl}/periodo/${periodoId}`);
-  }
-
-  // Obtener calificaciones por estudiante y período
-  getCalificacionesByEstudiantePeriodo(estudianteId: number, periodoId: number): Observable<PeriodoCalificacion[]> {
-    return this.http.get<PeriodoCalificacion[]>(`${this.apiUrl}/estudiante/${estudianteId}/periodo/${periodoId}`);
-  }
-
-  // Crear calificación de período
-  createCalificacion(calificacion: PeriodoCalificacion): Observable<PeriodoCalificacion> {
-    return this.http.post<PeriodoCalificacion>(this.apiUrl, calificacion);
-  }
-
-  // Actualizar calificación de período
-  updateCalificacion(id: number, calificacion: PeriodoCalificacion): Observable<PeriodoCalificacion> {
-    return this.http.put<PeriodoCalificacion>(`${this.apiUrl}/${id}`, calificacion);
-  }
-
-  // Eliminar calificación de período
-  deleteCalificacion(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  private formatDate(date: Date | string): string {
+    if (typeof date === 'string') {
+      return date.split('T')[0];
+    }
+    return date.toISOString().split('T')[0];
   }
 }

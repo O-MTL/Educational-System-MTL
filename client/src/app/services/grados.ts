@@ -40,5 +40,20 @@ export class GradosService {
   getGrado(id: number): Observable<Grado> {
     return this.http.get<Grado>(`${this.apiUrl}${id}/`);
   }
+
+  // Crear nuevo grado
+  createGrado(grado: Partial<Grado>): Observable<Grado> {
+    return this.http.post<Grado>(this.apiUrl, grado);
+  }
+
+  // Actualizar grado
+  updateGrado(id: number, grado: Partial<Grado>): Observable<Grado> {
+    return this.http.put<Grado>(`${this.apiUrl}${id}/`, grado);
+  }
+
+  // Eliminar grado
+  deleteGrado(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}${id}/`);
+  }
 }
 

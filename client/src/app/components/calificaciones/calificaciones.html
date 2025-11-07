@@ -10,6 +10,54 @@
   </mat-toolbar>
 
   <div class="content">
+    <!-- Formulario para crear calificación -->
+    <mat-card *ngIf="mostrarFormulario" class="form-card">
+      <mat-card-header>
+        <mat-card-title>Nueva Calificación</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form (ngSubmit)="guardarCalificacion()">
+          <div class="form-row">
+            <mat-form-field>
+              <mat-label>Estudiante</mat-label>
+              <mat-select [(ngModel)]="nuevaCalificacion.estudianteId" name="estudianteId" required>
+                <mat-option *ngFor="let estudiante of estudiantes" [value]="estudiante.id">
+                  {{ estudiante.nombre }} {{ estudiante.apellido }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>Materia</mat-label>
+              <mat-select [(ngModel)]="nuevaCalificacion.materiaId" name="materiaId" required>
+                <mat-option *ngFor="let materia of materias" [value]="materia.id">
+                  {{ materia.nombre }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+          <div class="form-row">
+            <mat-form-field>
+              <mat-label>Período</mat-label>
+              <mat-select [(ngModel)]="nuevaCalificacion.periodoId" name="periodoId" required>
+                <mat-option *ngFor="let periodo of periodos" [value]="periodo.id">
+                  {{ periodo.nombre }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>Nota</mat-label>
+              <input matInput type="number" [(ngModel)]="nuevaCalificacion.nota" name="nota" 
+                     min="0" max="20" step="0.01" required>
+            </mat-form-field>
+          </div>
+          <div class="form-actions">
+            <button mat-raised-button type="button" color="warn" (click)="cancelarFormulario()">Cancelar</button>
+            <button mat-raised-button type="submit" color="primary">Guardar</button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
     <mat-card class="table-card">
       <mat-card-content>
         <div class="table-container">
@@ -23,27 +71,29 @@
             <!-- Estudiante Column -->
             <ng-container matColumnDef="estudiante">
               <th mat-header-cell *matHeaderCellDef>Estudiante</th>
-              <td mat-cell *matCellDef="let calificacion">Estudiante {{ calificacion.estudianteId }}</td>
+              <td mat-cell *matCellDef="let calificacion">
+                {{ calificacion.alumno_nombre }} {{ calificacion.alumno_apellido }}
+              </td>
             </ng-container>
 
             <!-- Materia Column -->
             <ng-container matColumnDef="materia">
               <th mat-header-cell *matHeaderCellDef>Materia</th>
-              <td mat-cell *matCellDef="let calificacion">Materia {{ calificacion.materiaId }}</td>
+              <td mat-cell *matCellDef="let calificacion">{{ calificacion.materia_nombre }}</td>
             </ng-container>
 
             <!-- Período Column -->
             <ng-container matColumnDef="periodo">
               <th mat-header-cell *matHeaderCellDef>Período</th>
-              <td mat-cell *matCellDef="let calificacion">Período {{ calificacion.periodoId }}</td>
+              <td mat-cell *matCellDef="let calificacion">{{ calificacion.periodo_nombre }}</td>
             </ng-container>
 
             <!-- Nota Column -->
             <ng-container matColumnDef="nota">
               <th mat-header-cell *matHeaderCellDef>Nota</th>
               <td mat-cell *matCellDef="let calificacion">
-                <span [class]="getNotaClass(calificacion.nota)">
-                  {{ calificacion.nota }}
+                <span [class]="getNotaClass(calificacion.calificacion)">
+                  {{ calificacion.calificacion }}
                 </span>
               </td>
             </ng-container>
