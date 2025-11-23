@@ -7,16 +7,20 @@ import { MatCardModule } from '@angular/material/card';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { Personal } from '../../models/personal.interface';
 import { PersonalService } from '../../services/personal';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { NuevoPersonalDialogComponent } from './nuevo-personal-dialog/nuevo-personal-dialog';
 
 @Component({
   selector: 'app-personal',
+  standalone: true,
   imports: [
     CommonModule,
     MatTableModule,
     MatButtonModule,
     MatIconModule,
     MatCardModule,
-    MatToolbarModule
+    MatToolbarModule,
+    MatDialogModule
   ],
   templateUrl: './personal.html',
   styleUrl: './personal.scss'
@@ -25,7 +29,7 @@ export class PersonalComponent implements OnInit {
   displayedColumns: string[] = ['id', 'nombre', 'apellido', 'cedula', 'cargo', 'estado', 'acciones'];
   personal: Personal[] = [];
 
-  constructor(private personalService: PersonalService) {}
+  constructor(private personalService: PersonalService, private dialog: MatDialog ) {}
 
   ngOnInit() {
     this.loadPersonal();
@@ -42,10 +46,16 @@ export class PersonalComponent implements OnInit {
     });
   }
 
-  agregarPersonal() {
-    console.log('Agregar nuevo personal');
-    // TODO: Implementar modal/dialog para agregar personal
+  agregarPersonal(): void {
+    const ref = this.dialog.open(NuevoPersonalDialogComponent, {
+      width: '500px'
+    });
+
+    ref.afterClosed().subscribe(nuevo => {
+      if (nuevo) this.loadPersonal();   // recarga tabla
+    });
   }
+
 
   editarPersonal(personal: Personal) {
     console.log('Editar personal:', personal);
