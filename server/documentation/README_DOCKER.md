@@ -55,7 +55,6 @@ docker build -t codelatin-backend .
 docker run -d \
   --name codelatin-backend \
   -p 8000:8000 \
-  -v $(pwd)/data:/app/data \
   codelatin-backend
 ```
 
@@ -74,10 +73,19 @@ docker rm codelatin-backend
 
 ## Ejecutar comandos Django
 
+### ⚠️ Importante: Usuario Admin
+
+**Si la base de datos ya existe** (archivo `server/db.sqlite3` presente):
+- ✅ **NO necesitas crear un nuevo superusuario**
+- ✅ Usa las credenciales existentes para acceder al admin
+- ✅ La base de datos persiste entre reinicios gracias a los volúmenes montados
+
+**Solo si es la primera vez o la base de datos no existe**, crea un superusuario:
+
 ### Con Docker Compose
 
 ```bash
-# Crear superusuario
+# Crear superusuario (solo si es necesario)
 docker-compose exec backend python manage.py createsuperuser
 
 # Ejecutar migraciones manualmente
@@ -122,7 +130,9 @@ env_file:
 
 ## Persistencia de Datos
 
-La base de datos SQLite se guarda en `./server/data/db.sqlite3` para persistir los datos entre reinicios del contenedor.
+La base de datos SQLite se guarda en `./server/db.sqlite3` para persistir los datos entre reinicios del contenedor.
+
+**Nota importante:** Si el archivo `server/db.sqlite3` ya existe con datos y usuarios, estos se mantendrán cuando otra persona ejecute el servidor con Docker. No es necesario crear nuevos usuarios a menos que se elimine la base de datos.
 
 ## Solución de Problemas
 

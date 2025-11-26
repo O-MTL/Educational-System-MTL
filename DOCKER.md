@@ -32,6 +32,52 @@ El backend Django ha sido dockerizado para facilitar el despliegue y la ejecuci�
 
 ---
 
+## ⚡ Comandos Rápidos (Referencia)
+
+### Iniciar y Verificar
+
+```bash
+# Iniciar el servidor en segundo plano
+docker-compose up -d
+
+# Ver contenedores activos
+docker ps
+
+# Ver logs (últimas 20 líneas)
+docker-compose logs --tail=20 backend
+
+# Ver logs en tiempo real
+docker-compose logs -f backend
+```
+
+### Detener y Reiniciar
+
+```bash
+# Detener el servidor
+docker-compose stop
+
+# Reiniciar el servidor
+docker-compose restart
+
+# Detener y eliminar
+docker-compose down
+```
+
+### Comandos Django
+
+```bash
+# Crear superusuario (solo si es necesario)
+docker-compose exec backend python manage.py createsuperuser
+
+# Ejecutar migraciones
+docker-compose exec backend python manage.py migrate
+
+# Acceder a shell de Django
+docker-compose exec backend python manage.py shell
+```
+
+---
+
 ## 📁 Estructura de Archivos Docker
 
 ```
@@ -277,13 +323,26 @@ docker run -d \
 # Ver contenedores activos
 docker ps
 
-# Ver logs
+# Ver todos los contenedores (incluyendo detenidos)
+docker ps -a
+
+# Ver logs en tiempo real
 docker-compose logs -f backend
-# o
+
+# Ver últimas 20 líneas de logs
+docker-compose logs --tail=20 backend
+
+# Ver logs con Docker directamente
 docker logs -f codelatin-backend
+
+# Ver últimas líneas de logs con Docker directamente
+docker logs --tail=20 codelatin-backend
 
 # Verificar salud del contenedor
 docker-compose ps
+
+# Ver información detallada del contenedor
+docker inspect codelatin-backend
 ```
 
 ### Acceder al Servidor
@@ -398,14 +457,29 @@ docker-compose down -v
 # Ver logs en tiempo real
 docker-compose logs -f backend
 
+# Ver últimas 20 líneas de logs (útil para verificar inicio)
+docker-compose logs --tail=20 backend
+
 # Ver últimas 100 líneas de logs
 docker-compose logs --tail=100 backend
+
+# Ver todos los logs desde el inicio
+docker-compose logs backend
 ```
 
 ### Ejecutar Comandos Django
 
+**⚠️ Importante sobre el usuario admin:**
+
+Si el archivo `server/db.sqlite3` ya existe con datos y usuarios:
+- ✅ **NO necesitas crear un nuevo superusuario**
+- ✅ Usa las credenciales existentes para acceder al admin en http://localhost:8000/admin/
+- ✅ La base de datos persiste entre reinicios gracias a los volúmenes montados
+
+Solo crea un superusuario si es la primera vez o si la base de datos no existe.
+
 ```bash
-# Crear superusuario
+# Crear superusuario (solo si es necesario)
 docker-compose exec backend python manage.py createsuperuser
 
 # Ejecutar migraciones
@@ -465,6 +539,9 @@ gunzip -c codelatin-backend.tar.gz | docker load
 # Ver información del contenedor
 docker inspect codelatin-backend
 
+# Ver información resumida del contenedor
+docker inspect --format='{{.State.Status}}' codelatin-backend
+
 # Ver procesos dentro del contenedor
 docker-compose exec backend ps aux
 
@@ -473,11 +550,20 @@ docker-compose exec backend bash
 # o
 docker exec -it codelatin-backend bash
 
-# Ver uso de recursos
+# Ver uso de recursos en tiempo real
 docker stats codelatin-backend
+
+# Ver uso de recursos de todos los contenedores
+docker stats
 
 # Ver red del contenedor
 docker network inspect code-latin-7_default
+
+# Ver volúmenes montados
+docker inspect codelatin-backend | grep -A 10 Mounts
+
+# Ver variables de entorno del contenedor
+docker inspect codelatin-backend | grep -A 20 Env
 ```
 
 ---
