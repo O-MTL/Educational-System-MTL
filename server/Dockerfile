@@ -25,11 +25,10 @@ RUN mkdir -p /app/data
 
 # Hacer el script de entrypoint ejecutable
 COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
+RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Exponer el puerto 8000
 EXPOSE 8000
 
 # Usar el script de entrypoint
 ENTRYPOINT ["/app/entrypoint.sh"]
-
