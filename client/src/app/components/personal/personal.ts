@@ -51,7 +51,7 @@ export class PersonalComponent implements OnInit {
       width: '500px'
     });
 
-    ref.afterClosed().subscribe(nuevo => {
+    ref.afterClosed().subscribe((nuevo: Personal) => {
       if (nuevo) this.loadPersonal();   // recarga tabla
     });
   }

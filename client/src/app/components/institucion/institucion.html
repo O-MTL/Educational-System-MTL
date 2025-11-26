@@ -1,52 +1,16 @@
 <div class="institucion-container">
   <mat-toolbar color="primary" class="page-toolbar">
     <mat-icon>business</mat-icon>
-    <span>Gestión de Instituciones</span>
+    <span>Gestión de wea mala</span>
     <span class="spacer"></span>
     <button mat-raised-button color="accent" (click)="agregarInstitucion()">
       <mat-icon>add</mat-icon>
-      Nueva Institución
+      Nueva wea
     </button>
   </mat-toolbar>
 
   <div class="content">
     <!-- Formulario para crear institución -->
-    <mat-card *ngIf="mostrarFormulario" class="form-card">
-      <mat-card-header>
-        <mat-card-title>Nueva Institución</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <form (ngSubmit)="guardarInstitucion()">
-          <div class="form-row">
-            <mat-form-field class="full-width">
-              <mat-label>Nombre</mat-label>
-              <input matInput [(ngModel)]="nuevaInstitucion.nombre" name="nombre" required>
-            </mat-form-field>
-          </div>
-          <div class="form-row">
-            <mat-form-field class="full-width">
-              <mat-label>Dirección</mat-label>
-              <input matInput [(ngModel)]="nuevaInstitucion.direccion" name="direccion" required>
-            </mat-form-field>
-          </div>
-          <div class="form-row">
-            <mat-form-field>
-              <mat-label>Teléfono</mat-label>
-              <input matInput [(ngModel)]="nuevaInstitucion.telefono" name="telefono">
-            </mat-form-field>
-            <mat-form-field>
-              <mat-label>Email</mat-label>
-              <input matInput type="email" [(ngModel)]="nuevaInstitucion.email" name="email">
-            </mat-form-field>
-          </div>
-          <div class="form-actions">
-            <button mat-raised-button type="button" color="warn" (click)="cancelarFormulario()">Cancelar</button>
-            <button mat-raised-button type="submit" color="primary">Guardar</button>
-          </div>
-        </form>
-      </mat-card-content>
-    </mat-card>
-
     <mat-card class="table-card">
       <mat-card-content>
         <div class="table-container">
