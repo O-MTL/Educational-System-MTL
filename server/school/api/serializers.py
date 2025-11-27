@@ -1,12 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Institucion, Periodo, Grado, Profesor, Materia, Alumno, Calificacion, Personal
-
-
-class InstitucionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Institucion
-        fields = ['id', 'nombre', 'direccion', 'telefono', 'correo']
+from school.models import Periodo, Grado, Materia, Alumno, Calificacion, Personal
 
 
 class PeriodoSerializer(serializers.ModelSerializer):
@@ -23,14 +17,6 @@ class GradoSerializer(serializers.ModelSerializer):
         fields = ['id', 'nombre', 'descripcion', 'institucion', 'institucion_nombre']
 
 
-class ProfesorSerializer(serializers.ModelSerializer):
-    institucion_nombre = serializers.CharField(source='institucion.nombre', read_only=True)
-    
-    class Meta:
-        model = Profesor
-        fields = ['id', 'nombre', 'apellido', 'correo', 'telefono', 'institucion', 'institucion_nombre']
-
-
 class MateriaSerializer(serializers.ModelSerializer):
     profesor_nombre = serializers.CharField(source='profesor.nombre', read_only=True)
     profesor_apellido = serializers.CharField(source='profesor.apellido', read_only=True)
@@ -44,18 +30,17 @@ class MateriaSerializer(serializers.ModelSerializer):
 class AlumnoSerializer(serializers.ModelSerializer):
     grado_nombre = serializers.CharField(source='grado.nombre', read_only=True)
     gradoEstudioId = serializers.IntegerField(source='grado.id', read_only=True)
-    cedula = serializers.SerializerMethodField()  # Leer matricula como cedula
+    cedula = serializers.SerializerMethodField()
     fechaNacimiento = serializers.DateField(source='fecha_nacimiento', required=False, allow_null=True)
     email = serializers.EmailField(source='correo', required=False, allow_null=True)
-    matricula = serializers.CharField(required=False)  # Permitir escribir matricula directamente
+    matricula = serializers.CharField(required=False)
     
     def get_cedula(self, obj):
-        return obj.matricula  # Retornar matricula como cedula
+        return obj.matricula
     
     def to_internal_value(self, data):
         """Mapear campos del frontend a campos del modelo antes de la validación"""
         try:
-            # Crear una copia mutable de los datos
             if hasattr(data, 'items'):
                 data = dict(data.items())
             elif isinstance(data, dict):
@@ -65,35 +50,27 @@ class AlumnoSerializer(serializers.ModelSerializer):
             
             print(f"Datos recibidos en to_internal_value: {data}")
             
-            # Mapear cedula a matricula
             if 'cedula' in data and 'matricula' not in data:
                 data['matricula'] = str(data['cedula'])
             
-            # Mapear fechaNacimiento a fecha_nacimiento
             if 'fechaNacimiento' in data and 'fecha_nacimiento' not in data:
                 data['fecha_nacimiento'] = data.get('fechaNacimiento')
             
-            # Mapear email a correo
             if 'email' in data and 'correo' not in data:
                 data['correo'] = data.get('email')
             
-            # Mapear gradoEstudioId a grado
             if 'gradoEstudioId' in data and 'grado' not in data:
                 grado_id = data.get('gradoEstudioId')
                 if grado_id:
                     try:
                         grado_id_int = int(grado_id)
-                        # Validar que el grado exista antes de asignarlo
-                        from .models import Grado
+                        from school.models import Grado
                         if Grado.objects.filter(id=grado_id_int).exists():
                             data['grado'] = grado_id_int
                         else:
-                            # Si el grado no existe, no asignarlo (es opcional)
-                            # Pero guardamos el ID para mostrar un error más claro
                             print(f"Advertencia: El grado con ID {grado_id_int} no existe. Se creará el estudiante sin grado.")
-                            # No asignamos el grado, ya que es opcional
                     except (ValueError, TypeError):
-                        pass  # Si no se puede convertir, se manejará en la validación
+                        pass
             
             print(f"Datos mapeados antes de validación: {data}")
             result = super().to_internal_value(data)
@@ -107,7 +84,6 @@ class AlumnoSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         try:
-            # Asegurar que matricula esté presente
             if 'matricula' not in validated_data or not validated_data.get('matricula'):
                 nombre = validated_data.get('nombre', '')[:3].upper() if validated_data.get('nombre') else 'EST'
                 apellido = validated_data.get('apellido', '')[:3].upper() if validated_data.get('apellido') else '000'
@@ -115,11 +91,11 @@ class AlumnoSerializer(serializers.ModelSerializer):
             
             return super().create(validated_data)
         except Exception as e:
-            # Log del error para debugging
             import traceback
             print(f"Error en AlumnoSerializer.create: {e}")
             print(traceback.format_exc())
             raise
+    
     direccion = serializers.SerializerMethodField()
     telefono = serializers.SerializerMethodField()
     nombreRepresentante = serializers.SerializerMethodField()
@@ -130,28 +106,28 @@ class AlumnoSerializer(serializers.ModelSerializer):
     fechaIngreso = serializers.SerializerMethodField()
     
     def get_direccion(self, obj):
-        return ""  # Campo no disponible en el modelo actual
+        return ""
     
     def get_telefono(self, obj):
-        return ""  # Campo no disponible en el modelo actual
+        return ""
     
     def get_nombreRepresentante(self, obj):
-        return ""  # Campo no disponible en el modelo actual
+        return ""
     
     def get_telefonoRepresentante(self, obj):
-        return ""  # Campo no disponible en el modelo actual
+        return ""
     
     def get_año(self, obj):
-        return None  # Campo no disponible en el modelo actual
+        return None
     
     def get_periodo(self, obj):
-        return ""  # Campo no disponible en el modelo actual
+        return ""
     
     def get_estado(self, obj):
-        return True  # Por defecto activo
+        return True
     
     def get_fechaIngreso(self, obj):
-        return None  # Campo no disponible en el modelo actual
+        return None
     
     class Meta:
         model = Alumno
@@ -189,3 +165,4 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name']
+

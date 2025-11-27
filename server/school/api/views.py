@@ -5,19 +5,12 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.db.models import Q
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from .models import Institucion, Periodo, Grado, Profesor, Materia, Alumno, Calificacion, Personal
-from .serializers import (
-    InstitucionSerializer, PeriodoSerializer, GradoSerializer,
-    ProfesorSerializer, MateriaSerializer, AlumnoSerializer,
+from school.models import Periodo, Grado, Materia, Alumno, Calificacion, Personal
+from school.api.serializers import (
+    PeriodoSerializer, GradoSerializer,
+    MateriaSerializer, AlumnoSerializer,
     CalificacionSerializer, PersonalSerializer, UserSerializer
 )
-
-
-class InstitucionViewSet(viewsets.ModelViewSet):
-    queryset = Institucion.objects.all()
-    serializer_class = InstitucionSerializer
 
 
 class PeriodoViewSet(viewsets.ModelViewSet):
@@ -31,18 +24,6 @@ class GradoViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         queryset = Grado.objects.all()
-        institucion_id = self.request.query_params.get('institucion', None)
-        if institucion_id:
-            queryset = queryset.filter(institucion_id=institucion_id)
-        return queryset
-
-
-class ProfesorViewSet(viewsets.ModelViewSet):
-    queryset = Profesor.objects.all()
-    serializer_class = ProfesorSerializer
-    
-    def get_queryset(self):
-        queryset = Profesor.objects.all()
         institucion_id = self.request.query_params.get('institucion', None)
         if institucion_id:
             queryset = queryset.filter(institucion_id=institucion_id)
@@ -68,7 +49,7 @@ class MateriaViewSet(viewsets.ModelViewSet):
 class AlumnoViewSet(viewsets.ModelViewSet):
     queryset = Alumno.objects.all()
     serializer_class = AlumnoSerializer
-    permission_classes = []  # Permitir operaciones sin autenticación para desarrollo
+    permission_classes = []
     
     def get_serializer_context(self):
         """Pasar el request al serializer para que pueda acceder a los datos originales"""
@@ -142,7 +123,7 @@ class PersonalViewSet(viewsets.ModelViewSet):
 
 # Vista para autenticación
 class AuthViewSet(viewsets.ViewSet):
-    permission_classes = []  # Sin autenticación requerida para login
+    permission_classes = []
     
     @action(detail=False, methods=['post'])
     def login(self, request):
@@ -193,3 +174,4 @@ class AuthViewSet(viewsets.ViewSet):
                 {'error': 'No autenticado'}, 
                 status=status.HTTP_401_UNAUTHORIZED
             )
+
