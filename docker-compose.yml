@@ -18,8 +18,10 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=core.settings
       - PYTHONUNBUFFERED=1
-    # El entrypoint.sh maneja las migraciones y el inicio del servidor
-    # command: python manage.py runserver 0.0.0.0:8000  # Se ejecuta desde entrypoint.sh
+    # Sobrescribir el entrypoint del Dockerfile
+    entrypoint: []
+    # Ejecutar migraciones y luego iniciar el servidor
+    command: sh -c "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/')"]
       interval: 30s
