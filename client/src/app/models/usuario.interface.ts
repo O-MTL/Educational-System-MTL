@@ -21,4 +21,5 @@ export interface LoginResponse {
     token: string;
     usuario: Usuario;
     expiresIn: number;
+    refreshToken?: string; // Token de refresco opcional para JWT
 }

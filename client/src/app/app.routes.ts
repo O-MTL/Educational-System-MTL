@@ -4,6 +4,7 @@ import { GradoEstudioComponent } from './components/grado-estudio/grado-estudio'
 import { MateriasComponent } from './components/materias/materias';
 import { InstitucionComponent } from './components/institucion/institucion';
 import { CalificacionesComponent } from './components/calificaciones/calificaciones';
+import { RegisterComponent } from './components/auth/login/register/register';
 import { LoginComponent } from './components/auth/login/login';
 import { DashboardComponent } from './components/dashboard/dashboard';
 import { MainLayoutComponent } from './components/layout/main-layout/main-layout';
@@ -11,8 +12,11 @@ import { EstudiantesComponent } from './components/estudiantes/estudiantes';
 import { PeriodosComponent } from './components/periodos/periodos';
 import { authGuard } from './guards/auth-guard';
 
+
+
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
+  { path: 'register', component: RegisterComponent },
   { path: 'login', component: LoginComponent },
   {
     path: 'app',
