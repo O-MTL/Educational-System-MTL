@@ -1,137 +1,162 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, of } from 'rxjs';
-import { tap, delay } from 'rxjs/operators';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, BehaviorSubject, throwError } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { Usuario, LoginRequest, LoginResponse } from '../models/usuario.interface';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:3000/api/auth';
+  // ✅ Corregido: usa los endpoints reales de Django
+  private loginUrl = 'http://localhost:8000/api/auth/login/';
+  private registerUrl = 'http://localhost:8000/api/auth/register/';
+  // Nota: change-password no está implementado aún en Django
+
   private currentUserSubject = new BehaviorSubject<Usuario | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
   constructor(private http: HttpClient) {
-    // Verificar si hay un usuario guardado en localStorage (solo en el cliente)
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const savedUser = localStorage.getItem('currentUser');
-      if (savedUser) {
-        this.currentUserSubject.next(JSON.parse(savedUser));
+    // Restaurar sesión desde localStorage al iniciar
+    this.loadUserFromStorage();
+  }
+
+  // Cargar usuario/token desde localStorage (si existen)
+  private loadUserFromStorage(): void {
+    if (typeof window === 'undefined') return;
+
+    const token = localStorage.getItem('token');
+    const savedUser = localStorage.getItem('currentUser');
+
+    if (token && savedUser) {
+      try {
+        const user = JSON.parse(savedUser);
+        this.currentUserSubject.next(user);
+      } catch (e) {
+        console.warn('Datos de usuario corruptos en localStorage', e);
+        this.clearStorage();
       }
     }
   }
 
-  // Login con datos mock
+  // ✅ Login real con Django + JWT (SimpleJWT)
   login(credentials: LoginRequest): Observable<LoginResponse> {
-    // Simular llamada a API con delay
-    return of(this.mockLogin(credentials)).pipe(
-      delay(1000),
+    return this.http.post<any>(this.loginUrl, credentials).pipe(
       tap(response => {
-        // Guardar token y usuario (solo en el cliente)
-        if (typeof window !== 'undefined' && window.localStorage) {
-          localStorage.setItem('token', response.token);
-          localStorage.setItem('currentUser', JSON.stringify(response.usuario));
-        }
-        this.currentUserSubject.next(response.usuario);
+        // La respuesta de SimpleJWT es:
+        // { refresh: '...', access: '...', user: { id, username, email } }
+        const user: Usuario = {
+          id: response.user.id,
+          username: response.user.username,
+          email: response.user.email,
+          // ⚠️ rol no viene por defecto de `User`; lo tendrás que agregar en Django
+          rol: response.user.rol || 'Usuario', // provisional
+          token: response.access // Token JWT requerido por el tipo Usuario
+        };
+
+        const loginResponse: LoginResponse = {
+          token: response.access, // JWT de acceso
+          refreshToken: response.refresh, // opcional: para renovar token
+          usuario: user,
+          expiresIn: 3600 // 1h típico de SimpleJWT (puedes calcularlo del token si quieres)
+        };
+
+        this.saveAuthData(loginResponse);
+        this.currentUserSubject.next(user);
+      }),
+      catchError(error => {
+        console.error('Login error:', error);
+        return throwError(() => new Error(error.error?.detail || 'Error en autenticación'));
       })
     );
   }
 
-  // Método mock para simular autenticación
-  private mockLogin(credentials: LoginRequest): LoginResponse {
-    // Usuarios de prueba
-    const mockUsers = [
-      {
-        id: 1,
-        username: 'admin',
-        email: 'admin@sistema.edu',
-        rol: 'Administrador' as const,
-        token: 'mock-token-admin-123'
-      },
-      {
-        id: 2,
-        username: 'docente',
-        email: 'docente@sistema.edu',
-        rol: 'Docente' as const,
-        token: 'mock-token-docente-456'
-      },
-      {
-        id: 3,
-        username: 'estudiante',
-        email: 'estudiante@sistema.edu',
-        rol: 'Estudiante' as const,
-        token: 'mock-token-estudiante-789'
-      }
-    ];
-
-    // Buscar usuario por username
-    const user = mockUsers.find(u => u.username === credentials.username);
-
-    if (!user) {
-      throw new Error('Usuario no encontrado');
-    }
-
-    // Simular validación de contraseña (cualquier contraseña funciona para demo)
-    if (!credentials.password || credentials.password.length < 3) {
-      throw new Error('Contraseña inválida');
-    }
-
-    return {
-      token: user.token,
-      usuario: user,
-      expiresIn: 3600 // 1 hora en segundos
-    };
+  // ✅ Registro real
+  registerUser(userData: { username: string; email: string; password: string }): Observable<any> {
+    return this.http.post<any>(this.registerUrl, userData).pipe(
+      tap(response => {
+        // Opcional: loguear automáticamente tras registro
+        // this.saveAuthData({...})
+      }),
+      catchError(error => {
+        console.error('Register error:', error);
+        const msg = error.error?.error || error.error?.username || 'Error al registrar usuario';
+        return throwError(() => new Error(msg));
+      })
+    );
   }
 
-  // Logout
+  // ✅ Logout: limpia todo
   logout(): void {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('currentUser');
-    }
+    this.clearStorage();
     this.currentUserSubject.next(null);
   }
 
-  // Obtener usuario actual
+  // ✅ Helpers de autenticación (sin cambios — ya estaban bien)
   getCurrentUser(): Usuario | null {
     return this.currentUserSubject.value;
   }
 
-  // Verificar si el usuario está autenticado
   isAuthenticated(): boolean {
-    const hasUser = !!this.getCurrentUser();
-    const hasToken = typeof window !== 'undefined' && window.localStorage ? !!localStorage.getItem('token') : false;
-    return hasUser && hasToken;
+    return !!this.getCurrentUser() && !!this.getToken();
   }
 
-  // Verificar si el usuario tiene un rol específico
   hasRole(role: string): boolean {
     const user = this.getCurrentUser();
     return user ? user.rol === role : false;
   }
 
-  // Verificar si el usuario tiene alguno de los roles especificados
   hasAnyRole(roles: string[]): boolean {
     const user = this.getCurrentUser();
     return user ? roles.includes(user.rol) : false;
   }
 
-  // Obtener token
   getToken(): string | null {
-    return typeof window !== 'undefined' && window.localStorage ? localStorage.getItem('token') : null;
+    return typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   }
 
-  // Cambiar contraseña
+  // ✅ Obtener encabezados con token (útil para interceptores)
+  getAuthHeaders(): HttpHeaders {
+    const token = this.getToken();
+    return new HttpHeaders({
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    });
+  }
+
+  // ❗ changePassword no está implementado aún en Django → comentado hasta que lo agregues
+  /*
   changePassword(oldPassword: string, newPassword: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/change-password`, {
       oldPassword,
       newPassword
-    });
+    }, { headers: this.getAuthHeaders() }).pipe(
+      catchError(error => {
+        console.error('Change password error:', error);
+        return throwError(() => new Error('Error al cambiar contraseña'));
+      })
+    );
+  }
+  */
+
+  // 👇 Métodos auxiliares privados
+
+  private saveAuthData(loginResponse: LoginResponse): void {
+    if (typeof window === 'undefined') return;
+
+    localStorage.setItem('token', loginResponse.token);
+    // Guarda el refreshToken si lo usas (ej: para renovar sesión)
+    if (loginResponse.refreshToken) {
+      localStorage.setItem('refreshToken', loginResponse.refreshToken);
+    }
+    localStorage.setItem('currentUser', JSON.stringify(loginResponse.usuario));
   }
 
-  // Registrar nuevo usuario (solo administradores)
-  registerUser(user: Usuario): Observable<Usuario> {
-    return this.http.post<Usuario>(`${this.apiUrl}/register`, user);
+  private clearStorage(): void {
+    if (typeof window === 'undefined') return;
+
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('currentUser');
   }
 }

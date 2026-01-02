@@ -27,117 +27,58 @@ class MateriaSerializer(serializers.ModelSerializer):
         fields = ['id', 'nombre', 'descripcion', 'profesor', 'profesor_nombre', 'profesor_apellido', 'grado', 'grado_nombre']
 
 
-class AlumnoSerializer(serializers.ModelSerializer):
-    grado_nombre = serializers.CharField(source='grado.nombre', read_only=True)
-    gradoEstudioId = serializers.IntegerField(source='grado.id', read_only=True)
-    cedula = serializers.SerializerMethodField()
-    fechaNacimiento = serializers.DateField(source='fecha_nacimiento', required=False, allow_null=True)
-    email = serializers.EmailField(source='correo', required=False, allow_null=True)
-    matricula = serializers.CharField(required=False)
+class AlumnoSerializer(serializers.Serializer):
+    """Serializer simplificado - solo validación de entrada/salida"""
+    id = serializers.IntegerField(read_only=True)
+    nombre = serializers.CharField(max_length=100, required=True)
+    apellido = serializers.CharField(max_length=100, required=True)
+    matricula = serializers.CharField(max_length=20, required=False, allow_blank=True, allow_null=True)
+    cedula = serializers.CharField(read_only=True)  # Alias de matricula
+    fecha_nacimiento = serializers.DateField(required=False, allow_null=True)
+    fechaNacimiento = serializers.DateField(required=False, allow_null=True)  # Alias para frontend
+    correo = serializers.EmailField(required=False, allow_null=True, allow_blank=True)
+    email = serializers.EmailField(required=False, allow_null=True, allow_blank=True)  # Alias para frontend
+    grado = serializers.IntegerField(required=False, allow_null=True)
+    gradoEstudioId = serializers.IntegerField(required=False, allow_null=True)  # Alias para frontend
+    grado_nombre = serializers.CharField(read_only=True)
+    # Campos adicionales para compatibilidad con frontend (solo lectura)
+    direccion = serializers.CharField(read_only=True, default='')
+    telefono = serializers.CharField(read_only=True, default='')
+    nombreRepresentante = serializers.CharField(read_only=True, default='')
+    telefonoRepresentante = serializers.CharField(read_only=True, default='')
+    año = serializers.IntegerField(read_only=True, allow_null=True, default=None)
+    periodo = serializers.CharField(read_only=True, default='')
+    estado = serializers.BooleanField(read_only=True, default=True)
+    fechaIngreso = serializers.DateField(read_only=True, allow_null=True, default=None)
     
-    def get_cedula(self, obj):
-        return obj.matricula
+    def validate_nombre(self, value):
+        """Valida que el nombre tenga al menos 2 caracteres"""
+        if not value or len(value.strip()) < 2:
+            raise serializers.ValidationError("El nombre debe tener al menos 2 caracteres")
+        return value.strip()
     
-    def to_internal_value(self, data):
-        """Mapear campos del frontend a campos del modelo antes de la validación"""
-        try:
-            if hasattr(data, 'items'):
-                data = dict(data.items())
-            elif isinstance(data, dict):
-                data = dict(data)
-            else:
-                data = dict(data)
-            
-            print(f"Datos recibidos en to_internal_value: {data}")
-            
-            if 'cedula' in data and 'matricula' not in data:
-                data['matricula'] = str(data['cedula'])
-            
-            if 'fechaNacimiento' in data and 'fecha_nacimiento' not in data:
-                data['fecha_nacimiento'] = data.get('fechaNacimiento')
-            
-            if 'email' in data and 'correo' not in data:
-                data['correo'] = data.get('email')
-            
-            if 'gradoEstudioId' in data and 'grado' not in data:
-                grado_id = data.get('gradoEstudioId')
-                if grado_id:
-                    try:
-                        grado_id_int = int(grado_id)
-                        from school.models import Grado
-                        if Grado.objects.filter(id=grado_id_int).exists():
-                            data['grado'] = grado_id_int
-                        else:
-                            print(f"Advertencia: El grado con ID {grado_id_int} no existe. Se creará el estudiante sin grado.")
-                    except (ValueError, TypeError):
-                        pass
-            
-            print(f"Datos mapeados antes de validación: {data}")
-            result = super().to_internal_value(data)
-            print(f"Resultado de to_internal_value: {result}")
-            return result
-        except Exception as e:
-            print(f"Error en to_internal_value: {e}")
-            import traceback
-            print(traceback.format_exc())
-            raise
+    def validate_apellido(self, value):
+        """Valida que el apellido tenga al menos 2 caracteres"""
+        if not value or len(value.strip()) < 2:
+            raise serializers.ValidationError("El apellido debe tener al menos 2 caracteres")
+        return value.strip()
     
-    def create(self, validated_data):
-        try:
-            if 'matricula' not in validated_data or not validated_data.get('matricula'):
-                nombre = validated_data.get('nombre', '')[:3].upper() if validated_data.get('nombre') else 'EST'
-                apellido = validated_data.get('apellido', '')[:3].upper() if validated_data.get('apellido') else '000'
-                validated_data['matricula'] = f"EST-{nombre}-{apellido}"
-            
-            return super().create(validated_data)
-        except Exception as e:
-            import traceback
-            print(f"Error en AlumnoSerializer.create: {e}")
-            print(traceback.format_exc())
-            raise
-    
-    direccion = serializers.SerializerMethodField()
-    telefono = serializers.SerializerMethodField()
-    nombreRepresentante = serializers.SerializerMethodField()
-    telefonoRepresentante = serializers.SerializerMethodField()
-    año = serializers.SerializerMethodField()
-    periodo = serializers.SerializerMethodField()
-    estado = serializers.SerializerMethodField()
-    fechaIngreso = serializers.SerializerMethodField()
-    
-    def get_direccion(self, obj):
-        return ""
-    
-    def get_telefono(self, obj):
-        return ""
-    
-    def get_nombreRepresentante(self, obj):
-        return ""
-    
-    def get_telefonoRepresentante(self, obj):
-        return ""
-    
-    def get_año(self, obj):
-        return None
-    
-    def get_periodo(self, obj):
-        return ""
-    
-    def get_estado(self, obj):
-        return True
-    
-    def get_fechaIngreso(self, obj):
-        return None
-    
-    class Meta:
-        model = Alumno
-        fields = ['id', 'nombre', 'apellido', 'matricula', 'cedula', 'fecha_nacimiento', 'fechaNacimiento', 
-                 'correo', 'email', 'grado', 'grado_nombre', 'gradoEstudioId', 
-                 'direccion', 'telefono', 'nombreRepresentante', 'telefonoRepresentante', 'año', 'periodo', 
-                 'estado', 'fechaIngreso']
-        read_only_fields = ['id', 'cedula', 'grado_nombre', 'gradoEstudioId', 
-                           'direccion', 'telefono', 'nombreRepresentante', 'telefonoRepresentante', 
-                           'año', 'periodo', 'estado', 'fechaIngreso']
+    def validate(self, data):
+        """Validación cruzada de campos"""
+        # Mapear alias del frontend a campos del backend
+        if 'fechaNacimiento' in data and 'fecha_nacimiento' not in data:
+            data['fecha_nacimiento'] = data.get('fechaNacimiento')
+        
+        if 'email' in data and 'correo' not in data:
+            data['correo'] = data.get('email')
+        
+        if 'gradoEstudioId' in data and 'grado' not in data:
+            data['grado'] = data.get('gradoEstudioId')
+        
+        if 'cedula' in data and 'matricula' not in data:
+            data['matricula'] = data.get('cedula')
+        
+        return data
 
 
 class CalificacionSerializer(serializers.ModelSerializer):

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -11,19 +9,23 @@ services:
     volumes:
       # Montar el código para desarrollo (opcional, comentar en producción)
       - ./server:/app
-      # Persistir la base de datos SQLite en el directorio data
-      - ./server/data:/app/data
-      # Montar la base de datos directamente (alternativa)
-      - ./server/db.sqlite3:/app/db.sqlite3
     environment:
       - DJANGO_SETTINGS_MODULE=core.settings
       - PYTHONUNBUFFERED=1
+      # Variables de entorno para PostgreSQL (Neon)
+      - DB_NAME=${DB_NAME:-neondb}
+      - DB_USER=${DB_USER:-neondb_owner}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST:-ep-lucky-bush-ada2nsx9-pooler.c-2.us-east-1.aws.neon.tech}
+      - DB_PORT=${DB_PORT:-5432}
+    env_file:
+      - ./.env  # Cargar desde archivo .env (si existe)
     # Sobrescribir el entrypoint del Dockerfile
     entrypoint: []
     # Ejecutar migraciones y luego iniciar el servidor
     command: sh -c "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/').close()"]
       interval: 30s
       timeout: 10s
       retries: 3

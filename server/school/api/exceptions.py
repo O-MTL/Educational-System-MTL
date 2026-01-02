@@ -5,6 +5,12 @@ from rest_framework.views import exception_handler
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import IntegrityError
+from school.exceptions.domain_exceptions import (
+    DomainException,
+    AlumnoNotFoundError,
+    MatriculaDuplicadaError,
+    GradoNotFoundError,
+)
 import traceback
 
 
@@ -12,6 +18,21 @@ def custom_exception_handler(exc, context):
     """
     Custom exception handler que devuelve JSON en lugar de HTML
     """
+    # Manejar excepciones de dominio
+    if isinstance(exc, DomainException):
+        status_code = status.HTTP_400_BAD_REQUEST
+        if isinstance(exc, AlumnoNotFoundError):
+            status_code = status.HTTP_404_NOT_FOUND
+        
+        return Response(
+            {
+                'error': exc.__class__.__name__,
+                'detail': str(exc),
+                'status_code': status_code
+            },
+            status=status_code
+        )
+    
     # Manejar errores de integridad (UNIQUE constraint, etc.)
     if isinstance(exc, IntegrityError):
         error_message = str(exc)

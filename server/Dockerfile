@@ -8,9 +8,11 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Instalar dependencias del sistema
+# Instalar dependencias del sistema para PostgreSQL
 RUN apt-get update && apt-get install -y \
     gcc \
+    postgresql-client \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar requirements y instalar dependencias Python
@@ -20,15 +22,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar el código de la aplicación
 COPY . .
 
-# Crear directorio para la base de datos SQLite (si se usa)
-RUN mkdir -p /app/data
-
-# Hacer el script de entrypoint ejecutable
+# Hacer el script de entrypoint ejecutable (si existe)
 COPY scripts/entrypoint.sh /app/entrypoint.sh
-RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
+RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh || true
 
 # Exponer el puerto 8000
 EXPOSE 8000
 
-# Usar el script de entrypoint
+# Usar el script de entrypoint (si existe, sino usar comando por defecto)
 ENTRYPOINT ["/app/entrypoint.sh"]

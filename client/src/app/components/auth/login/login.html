@@ -43,7 +43,14 @@
           <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
           {{ loading ? 'Iniciando sesión...' : 'Iniciar Sesión' }}
         </button>
+
+        <a routerLink [routerLink]="['/register']" class="login-button" routerLinkActive="active">Registrarse</a>
+
+
       </form>
     </mat-card-content>
   </mat-card>
+
+  <!-- Botón para redirigir al registro -->
+
 </div>

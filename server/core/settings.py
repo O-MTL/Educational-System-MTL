@@ -11,6 +11,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde .env
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -65,7 +70,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
-    'EXCEPTION_HANDLER': 'school.exceptions.custom_exception_handler',  # Handler personalizado para errores JSON
+    'EXCEPTION_HANDLER': 'school.api.exceptions.custom_exception_handler',  # Handler personalizado para errores JSON
 }
 
 ROOT_URLCONF = 'core.urls'
@@ -91,35 +96,36 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+# Configuración para PostgreSQL (Neon)
+# Las credenciales se cargan desde variables de entorno (.env)
+DB_PASSWORD = os.environ.get('DB_PASSWORD', '')
 
-# Configuración para SQL Server (comentada)
-# Si quieres usar SQL Server, descomenta esta configuración y comenta la de SQLite
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'mssql',
-#         'NAME': 'codelatin_db',  # Nombre de tu base de datos
-#         # IMPORTANTE: Cambia 'HOST' por el nombre exacto de tu servidor SQL Server
-#         # Opciones comunes:
-#         # - 'localhost' (SQL Server estándar)
-#         # - 'localhost\\SQLEXPRESS' (SQL Server Express - nota las dobles barras invertidas)
-#         # - 'TU_COMPUTADORA\\SQLEXPRESS' (Express con nombre de instancia)
-#         'HOST': 'localhost\\SQLEXPRESS',  # ⚠️ CAMBIA ESTO por tu servidor
-#         'PORT': '1433',  # Puerto por defecto de SQL Server
-#         'OPTIONS': {
-#             'driver': 'ODBC Driver 17 for SQL Server',
-#             'trusted_connection': 'yes',  # Usa autenticación de Windows
-#         },
-#     }
-# }
+# Validar que la contraseña esté configurada
+if not DB_PASSWORD:
+    import warnings
+    warnings.warn(
+        "⚠️ DB_PASSWORD no está configurada. "
+        "Crea un archivo .env en server/ con tus credenciales de Neon. "
+        "Ver server/env.example para más información."
+    )
 
-# Configuración para SQLite (Activa)
-# En Docker, el volumen montado en ./server/data asegura la persistencia
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'neondb'),
+        'USER': os.environ.get('DB_USER', 'neondb_owner'),
+        'PASSWORD': DB_PASSWORD,
+        'HOST': os.environ.get('DB_HOST', 'ep-lucky-bush-ada2nsx9-pooler.c-2.us-east-1.aws.neon.tech'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
+        'OPTIONS': {
+            'sslmode': 'require',  # 👈 Requiere SSL pero usa certificados del sistema
+            'connect_timeout': 10,
+            'keepalives': 1,
+            'keepalives_idle': 30,
+            'keepalives_interval': 10,
+            'keepalives_count': 5,
+        },
+        'CONN_MAX_AGE': 60,  # 👈 Mantiene conexiones vivas por 60 segundos (mejor para consola interactiva)
     }
 }
 
@@ -165,6 +171,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
 # CORS Configuration - Permite comunicación con Angular
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",  # Angular dev server
@@ -180,4 +187,8 @@ CORS_ALLOW_ALL_ORIGINS = True
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:4200',
     'http://127.0.0.1:4200',
+]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # ← debe estar
 ]

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { InstitucionService } from '../../../services/institucion';
@@ -10,6 +11,7 @@ import { MatButtonModule } from '@angular/material/button';
   selector: 'app-nuevo-institucion-btn',
   standalone: true,
   imports: [
+    CommonModule,
     ReactiveFormsModule,
     MatDialogModule,
     MatFormFieldModule,

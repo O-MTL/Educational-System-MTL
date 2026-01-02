@@ -74,5 +74,5 @@ CodeLatin-7/
 ## 📝 Notas
 
 - Las migraciones se ejecutan automáticamente al iniciar el contenedor
-- La base de datos SQLite persiste en `server/db.sqlite3`
+- La base de datos PostgreSQL (Neon) se configura mediante variables de entorno en `server/.env`
 - El código está montado como volumen para desarrollo (cambios se reflejan automáticamente)

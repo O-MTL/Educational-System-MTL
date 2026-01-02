@@ -46,29 +46,29 @@ docker-compose down -v
 
 ```bash
 cd server
-docker build -t codelatin-backend .
+docker build -t educational-system-backend .
 ```
 
 ### Ejecutar el contenedor
 
 ```bash
 docker run -d \
-  --name codelatin-backend \
+  --name educational-system-backend \
   -p 8000:8000 \
-  codelatin-backend
+  educational-system-backend
 ```
 
 ### Ver logs
 
 ```bash
-docker logs -f codelatin-backend
+docker logs -f educational-system-backend
 ```
 
 ### Detener y eliminar
 
 ```bash
-docker stop codelatin-backend
-docker rm codelatin-backend
+docker stop educational-system-backend
+docker rm educational-system-backend
 ```
 
 ## Ejecutar comandos Django
@@ -90,38 +90,38 @@ docker-compose exec backend python manage.py shell
 
 ```bash
 # Crear superusuario
-docker exec -it codelatin-backend python manage.py createsuperuser
+docker exec -it educational-system-backend python manage.py createsuperuser
 
 # Ejecutar migraciones
-docker exec -it codelatin-backend python manage.py migrate
+docker exec -it educational-system-backend python manage.py migrate
 
 # Acceder a la shell
-docker exec -it codelatin-backend python manage.py shell
+docker exec -it educational-system-backend python manage.py shell
 ```
 
 ## Variables de Entorno
 
-Puedes crear un archivo `.env` en la carpeta `server` para configurar variables de entorno:
+Crea un archivo `.env` en la carpeta `server` para configurar las credenciales de PostgreSQL (Neon):
 
 ```env
+# PostgreSQL (Neon) Configuration
+DB_NAME=neondb
+DB_USER=neondb_owner
+DB_PASSWORD=tu_password_aqui
+DB_HOST=ep-lucky-bush-ada2nsx9-pooler.c-2.us-east-1.aws.neon.tech
+DB_PORT=5432
+
+# Django Settings (opcional)
 DEBUG=True
 SECRET_KEY=tu-secret-key-aqui
 ALLOWED_HOSTS=localhost,127.0.0.1
 ```
 
-Y actualizar el `docker-compose.yml` para cargarlo:
-
-```yaml
-environment:
-  - DEBUG=${DEBUG}
-  - SECRET_KEY=${SECRET_KEY}
-env_file:
-  - ./server/.env
-```
+El `docker-compose.yml` ya está configurado para cargar estas variables automáticamente.
 
 ## Persistencia de Datos
 
-La base de datos SQLite se guarda en `./server/data/db.sqlite3` para persistir los datos entre reinicios del contenedor.
+La base de datos PostgreSQL (Neon) es un servicio en la nube, por lo que los datos persisten automáticamente. No necesitas configurar volúmenes locales para la base de datos.
 
 ## Solución de Problemas
 
@@ -150,14 +150,47 @@ docker-compose build --no-cache
 docker-compose up
 ```
 
+## Optimización de Hot Reload (Desarrollo)
+
+### Angular (Frontend)
+
+El proyecto está configurado para detectar cambios automáticamente sin necesidad de reiniciar:
+
+**Opciones disponibles:**
+
+```bash
+# Modo normal (polling cada 2 segundos)
+npm start
+
+# Modo rápido (polling cada 1 segundo) - Recomendado para desarrollo
+npm run start:fast
+```
+
+**Características:**
+- ✅ **Watch mode automático**: Los cambios se detectan y recargan automáticamente
+- ✅ **Polling optimizado**: Configurado para Windows (detecta cambios cada 1-2 segundos)
+- ✅ **Sin reinicio necesario**: Solo guarda el archivo y espera la recarga automática
+
+**Nota**: Si los cambios no se detectan rápidamente, usa `npm run start:fast` para polling más frecuente.
+
+### Django (Backend)
+
+El servidor Django también tiene auto-reload habilitado:
+
+- ✅ **Auto-reload nativo**: `runserver` detecta cambios en archivos `.py` automáticamente
+- ✅ **Volumen montado**: El código está montado en Docker para reflejar cambios inmediatamente
+- ✅ **Sin reinicio necesario**: Los cambios en modelos, vistas, serializers se recargan automáticamente
+
+**Importante**: Si cambias `settings.py` o `urls.py`, puede requerir reinicio manual del contenedor.
+
 ## Producción
 
 Para producción, considera:
 
-1. Usar una base de datos externa (PostgreSQL, MySQL, etc.)
+1. ✅ Base de datos externa (PostgreSQL con Neon) - Ya configurado
 2. Configurar variables de entorno seguras
 3. Deshabilitar DEBUG
 4. Usar un servidor WSGI como Gunicorn
 5. Configurar un proxy reverso (Nginx)
-6. Usar volúmenes nombrados para datos persistentes
+6. Usar SSL/TLS para conexiones seguras
 
