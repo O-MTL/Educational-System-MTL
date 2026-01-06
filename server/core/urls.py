@@ -22,4 +22,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.api_root, name='api-root'),  # Vista de bienvenida
     path('api/', include('school.api.urls')),  # Incluir URLs de la API
+    path('api/', include('api.urls')),
 ]
+

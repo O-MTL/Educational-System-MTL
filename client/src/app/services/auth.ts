@@ -1,137 +1,178 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject, of } from 'rxjs';
-import { tap, delay } from 'rxjs/operators';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, BehaviorSubject, throwError } from 'rxjs';
+import { map, tap, catchError } from 'rxjs/operators';
 import { Usuario, LoginRequest, LoginResponse } from '../models/usuario.interface';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:3000/api/auth';
-  private currentUserSubject = new BehaviorSubject<Usuario | null>(null);
-  public currentUser$ = this.currentUserSubject.asObservable();
+  // API endpoints for Django backend authentication
+  private readonly loginUrl = 'http://localhost:8000/api/auth/login/';
+  private readonly registerUrl = 'http://localhost:8000/api/auth/register/';
 
-  constructor(private http: HttpClient) {
-    // Verificar si hay un usuario guardado en localStorage (solo en el cliente)
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const savedUser = localStorage.getItem('currentUser');
-      if (savedUser) {
-        this.currentUserSubject.next(JSON.parse(savedUser));
+  private readonly currentUserSubject = new BehaviorSubject<Usuario | null>(null);
+  public readonly currentUser$ = this.currentUserSubject.asObservable();
+
+  constructor(private readonly http: HttpClient) {
+    // Restaurar sesión desde localStorage al iniciar
+    this.loadUserFromStorage();
+  }
+
+  // Cargar usuario/token desde localStorage (si existen)
+  private loadUserFromStorage(): void {
+    if (globalThis.window === undefined) return;
+
+    const token = localStorage.getItem('token');
+    const savedUser = localStorage.getItem('currentUser');
+
+    if (token && savedUser) {
+      try {
+        const user = JSON.parse(savedUser);
+        this.currentUserSubject.next(user);
+      } catch (e) {
+        console.warn('Datos de usuario corruptos en localStorage', e);
+        this.clearStorage();
       }
     }
   }
 
-  // Login con datos mock
+  // Login with Django backend - returns LoginResponse with usuario object
   login(credentials: LoginRequest): Observable<LoginResponse> {
-    // Simular llamada a API con delay
-    return of(this.mockLogin(credentials)).pipe(
-      delay(1000),
-      tap(response => {
-        // Guardar token y usuario (solo en el cliente)
-        if (typeof window !== 'undefined' && window.localStorage) {
-          localStorage.setItem('token', response.token);
-          localStorage.setItem('currentUser', JSON.stringify(response.usuario));
-        }
-        this.currentUserSubject.next(response.usuario);
+    return this.http.post<any>(this.loginUrl, credentials).pipe(
+      map(response => {
+        // Build Usuario object from Django response
+        // Note: 'rol' comes from response.user.rol (added by AuthViewSet in school/api/views.py)
+        const user: Usuario = {
+          id: response.user.id,
+          username: response.user.username,
+          email: response.user.email,
+          /**
+           * IMPORTANT: The 'rol' property comes from within the 'user' object.
+           * 
+           * Original Error: "Cannot read properties of undefined (reading 'rol')"
+           * Cause: tap() was used instead of map(), so the transformed response wasn't returned.
+           * Fix: Changed to map() to return the LoginResponse with usuario.rol.
+           * 
+           * Educational System Roles:
+           * - 'Administrador': is_superuser = True (full system access)
+           * - 'Docente': is_staff = True (teacher access)
+           * - 'Estudiante': regular user (student access)
+           */
+          rol: response.user.rol || 'Usuario',
+          token: response.token || response.access
+        };
+
+        const loginResponse: LoginResponse = {
+          token: response.token || response.access,
+          refreshToken: response.refresh,
+          usuario: user,
+          expiresIn: 3600
+        };
+
+        // Save auth data and update current user subject
+        this.saveAuthData(loginResponse);
+        this.currentUserSubject.next(user);
+
+        // Return the transformed response so login.ts receives usuario.rol
+        return loginResponse;
+      }),
+      catchError(error => {
+        console.error('Login error:', error);
+        return throwError(() => new Error(error.error?.detail || error.error?.error || 'Error en autenticación'));
       })
     );
   }
 
-  // Método mock para simular autenticación
-  private mockLogin(credentials: LoginRequest): LoginResponse {
-    // Usuarios de prueba
-    const mockUsers = [
-      {
-        id: 1,
-        username: 'admin',
-        email: 'admin@sistema.edu',
-        rol: 'Administrador' as const,
-        token: 'mock-token-admin-123'
-      },
-      {
-        id: 2,
-        username: 'docente',
-        email: 'docente@sistema.edu',
-        rol: 'Docente' as const,
-        token: 'mock-token-docente-456'
-      },
-      {
-        id: 3,
-        username: 'estudiante',
-        email: 'estudiante@sistema.edu',
-        rol: 'Estudiante' as const,
-        token: 'mock-token-estudiante-789'
-      }
-    ];
-
-    // Buscar usuario por username
-    const user = mockUsers.find(u => u.username === credentials.username);
-
-    if (!user) {
-      throw new Error('Usuario no encontrado');
-    }
-
-    // Simular validación de contraseña (cualquier contraseña funciona para demo)
-    if (!credentials.password || credentials.password.length < 3) {
-      throw new Error('Contraseña inválida');
-    }
-
-    return {
-      token: user.token,
-      usuario: user,
-      expiresIn: 3600 // 1 hora en segundos
-    };
+  // Register new user with Django backend
+  registerUser(userData: { username: string; email: string; password: string }): Observable<any> {
+    return this.http.post<any>(this.registerUrl, userData).pipe(
+      tap(() => {
+        // Auto-login after registration can be implemented here if needed
+      }),
+      catchError(error => {
+        console.error('Register error:', error);
+        const msg = error.error?.error || error.error?.username || 'Error al registrar usuario';
+        return throwError(() => new Error(msg));
+      })
+    );
   }
 
-  // Logout
+  // Logout: clears all stored auth data
   logout(): void {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('currentUser');
-    }
+    this.clearStorage();
     this.currentUserSubject.next(null);
   }
 
-  // Obtener usuario actual
+  // ✅ Helpers de autenticación (sin cambios — ya estaban bien)
   getCurrentUser(): Usuario | null {
     return this.currentUserSubject.value;
   }
 
-  // Verificar si el usuario está autenticado
   isAuthenticated(): boolean {
-    const hasUser = !!this.getCurrentUser();
-    const hasToken = typeof window !== 'undefined' && window.localStorage ? !!localStorage.getItem('token') : false;
-    return hasUser && hasToken;
+    return !!this.getCurrentUser() && !!this.getToken();
   }
 
-  // Verificar si el usuario tiene un rol específico
   hasRole(role: string): boolean {
     const user = this.getCurrentUser();
     return user ? user.rol === role : false;
   }
 
-  // Verificar si el usuario tiene alguno de los roles especificados
   hasAnyRole(roles: string[]): boolean {
     const user = this.getCurrentUser();
     return user ? roles.includes(user.rol) : false;
   }
 
-  // Obtener token
   getToken(): string | null {
-    return typeof window !== 'undefined' && window.localStorage ? localStorage.getItem('token') : null;
+    if (globalThis.window === undefined) {
+      return null;
+    }
+    return localStorage.getItem('token');
   }
 
-  // Cambiar contraseña
+  // ✅ Obtener encabezados con token (útil para interceptores)
+  getAuthHeaders(): HttpHeaders {
+    const token = this.getToken();
+    return new HttpHeaders({
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    });
+  }
+
+  // ❗ changePassword no está implementado aún en Django → comentado hasta que lo agregues
+  /*
   changePassword(oldPassword: string, newPassword: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/change-password`, {
       oldPassword,
       newPassword
-    });
+    }, { headers: this.getAuthHeaders() }).pipe(
+      catchError(error => {
+        console.error('Change password error:', error);
+        return throwError(() => new Error('Error al cambiar contraseña'));
+      })
+    );
+  }
+  */
+
+  // 👇 Métodos auxiliares privados
+
+  private saveAuthData(loginResponse: LoginResponse): void {
+    if (globalThis.window === undefined) return;
+
+    localStorage.setItem('token', loginResponse.token);
+    // Guarda el refreshToken si lo usas (ej: para renovar sesión)
+    if (loginResponse.refreshToken) {
+      localStorage.setItem('refreshToken', loginResponse.refreshToken);
+    }
+    localStorage.setItem('currentUser', JSON.stringify(loginResponse.usuario));
   }
 
-  // Registrar nuevo usuario (solo administradores)
-  registerUser(user: Usuario): Observable<Usuario> {
-    return this.http.post<Usuario>(`${this.apiUrl}/register`, user);
+  private clearStorage(): void {
+    if (globalThis.window === undefined) return;
+
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('currentUser');
   }
 }

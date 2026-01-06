@@ -5,9 +5,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Personal } from '../../models/personal.interface';
 import { PersonalService } from '../../services/personal';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { NuevoPersonalDialogComponent } from './nuevo-personal-dialog/nuevo-personal-dialog';
 
 @Component({
@@ -23,49 +23,49 @@ import { NuevoPersonalDialogComponent } from './nuevo-personal-dialog/nuevo-pers
     MatDialogModule
   ],
   templateUrl: './personal.html',
-  styleUrl: './personal.scss'
+  styleUrls: ['./personal.scss']
 })
 export class PersonalComponent implements OnInit {
   displayedColumns: string[] = ['id', 'nombre', 'apellido', 'cedula', 'cargo', 'estado', 'acciones'];
   personal: Personal[] = [];
 
-  constructor(private personalService: PersonalService, private dialog: MatDialog ) {}
+  constructor(private personalService: PersonalService, private dialog: MatDialog) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.loadPersonal();
   }
 
-  loadPersonal() {
+  private loadPersonal(): void {
     this.personalService.getAll().subscribe({
-      next: (data) => {
-        this.personal = data;
-      },
-      error: (error) => {
-        console.error('Error al cargar personal:', error);
-      }
+      next: data => this.personal = data ?? [],
+      error: err => console.error('Error al cargar personal', err)
     });
   }
 
-  agregarPersonal() {
-    console.log('Agregar nuevo personal');
-    // TODO: Implementar modal/dialog para agregar personal
+  agregarPersonal(): void {
+    const ref = this.dialog.open(NuevoPersonalDialogComponent, { width: '500px' });
+    ref.afterClosed().subscribe(res => {
+      if (res) this.loadPersonal();
+    });
   }
 
-  editarPersonal(personal: Personal) {
-    console.log('Editar personal:', personal);
-    // TODO: Implementar modal/dialog para editar personal
+  editarPersonal(p: Personal): void {
+    const ref = this.dialog.open(NuevoPersonalDialogComponent, {
+      width: '500px',
+      data: p
+    });
+    ref.afterClosed().subscribe(res => {
+      if (res) this.loadPersonal();
+    });
   }
 
-  eliminarPersonal(personal: Personal) {
-    if (confirm(`¿Está seguro de eliminar a ${personal.nombre} ${personal.apellido}?`)) {
-      this.personalService.delete(personal.id).subscribe({
-        next: () => {
-          this.loadPersonal();
-        },
-        error: (error) => {
-          console.error('Error al eliminar personal:', error);
-        }
-      });
-    }
+  eliminarPersonal(p: Personal): void {
+    if (!p?.id) return;
+    const ok = confirm(`¿Eliminar a ${p.nombre} ${p.apellido}?`);
+    if (!ok) return;
+    this.personalService.delete(p.id).subscribe({
+      next: () => this.loadPersonal(),
+      error: err => console.error('Error al eliminar', err)
+    });
   }
 }

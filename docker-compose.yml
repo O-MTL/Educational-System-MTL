@@ -19,7 +19,7 @@ services:
       - DB_HOST=${DB_HOST:-ep-lucky-bush-ada2nsx9-pooler.c-2.us-east-1.aws.neon.tech}
       - DB_PORT=${DB_PORT:-5432}
     env_file:
-      - ./server/.env  # Cargar desde archivo .env (si existe)
+      - ./.env  # Cargar desde archivo .env (si existe)
     # Sobrescribir el entrypoint del Dockerfile
     entrypoint: []
     # Ejecutar migraciones y luego iniciar el servidor

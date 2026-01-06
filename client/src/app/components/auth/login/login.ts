@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -22,7 +22,8 @@ import { LoginRequest } from '../../../models/usuario.interface';
     MatInputModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    RouterModule
   ],
   templateUrl: './login.html',
   styleUrl: './login.scss'
@@ -33,9 +34,9 @@ export class LoginComponent {
   error = '';
 
   constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router
+    private readonly fb: FormBuilder,
+    private readonly authService: AuthService,
+    private readonly router: Router
   ) {
     this.loginForm = this.fb.group({
       username: ['', [Validators.required]],
@@ -64,23 +65,20 @@ export class LoginComponent {
       });
     }
   }
-
-  private redirectByRole(rol: string) {
-    switch (rol) {
-      case 'Administrador':
-        this.router.navigate(['/app/dashboard']);
-        break;
-      case 'Docente':
-        this.router.navigate(['/app/dashboard']);
-        break;
-      case 'Estudiante':
-        this.router.navigate(['/app/dashboard']);
-        break;
-      case 'Personal':
-        this.router.navigate(['/app/dashboard']);
-        break;
-      default:
-        this.router.navigate(['/app/dashboard']);
-    }
+  /**
+   * Redirects user to appropriate route based on their role.
+   * Educational System Roles:
+   * - Administrador: Full system access (superuser)
+   * - Docente: Teacher access (staff member)
+   * - Estudiante: Student access (regular user)
+   * 
+   * Note: Currently all roles redirect to dashboard.
+   * Customize routes per role here when different pages are implemented.
+   * @param rol - User's role from authentication response (currently unused but kept for future routing)
+   */
+  private redirectByRole(_rol: string) {
+    // All roles currently redirect to dashboard
+    // Future: implement role-specific routes (e.g., /app/admin, /app/teacher, /app/student)
+    this.router.navigate(['/app/dashboard']);
   }
 }

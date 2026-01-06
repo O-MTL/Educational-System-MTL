@@ -1,0 +1,6 @@
+{
+  "include": ["server"],
+  "venvPath": "server",
+  "venv": ".venv"
+}
+

@@ -118,10 +118,14 @@ DATABASES = {
         'HOST': os.environ.get('DB_HOST', 'ep-lucky-bush-ada2nsx9-pooler.c-2.us-east-1.aws.neon.tech'),
         'PORT': os.environ.get('DB_PORT', '5432'),
         'OPTIONS': {
-            'sslmode': 'require',
+            'sslmode': 'require',  # 👈 Requiere SSL pero usa certificados del sistema
             'connect_timeout': 10,
+            'keepalives': 1,
+            'keepalives_idle': 30,
+            'keepalives_interval': 10,
+            'keepalives_count': 5,
         },
-        'CONN_MAX_AGE': 600,  # Connection pooling (10 minutos)
+        'CONN_MAX_AGE': 60,  # 👈 Mantiene conexiones vivas por 60 segundos (mejor para consola interactiva)
     }
 }
 
@@ -167,6 +171,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
 # CORS Configuration - Permite comunicación con Angular
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",  # Angular dev server
@@ -182,4 +187,8 @@ CORS_ALLOW_ALL_ORIGINS = True
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:4200',
     'http://127.0.0.1:4200',
+]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # ← debe estar
 ]
