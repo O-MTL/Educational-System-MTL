@@ -23,6 +23,7 @@ import { MatDatepicker } from '@angular/material/datepicker';
     MatInputModule,
     MatSelectModule,
     MatDatepickerModule,
+    MatDatepicker,
     MatNativeDateModule,
     MatButtonModule
   ],
@@ -70,6 +71,13 @@ export class NuevoPersonalDialogComponent implements OnInit {
 
   guardar(): void {
     if (this.form.invalid) return;
+
+     // Convertimos la fecha al formato YYYY-MM-DD
+     const formValues = { ...this.form.value };
+     if (formValues.fecha_ingreso instanceof Date) {
+       const formattedDate = formValues.fecha_ingreso.toISOString().split('T')[0]; // YYYY-MM-DD
+       formValues.fecha_ingreso = formattedDate;
+     }
 
     const payload: Personal = { ...this.form.value, id: this.data?.id };
 
