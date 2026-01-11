@@ -10,7 +10,7 @@
   </mat-toolbar>
 
   <div class="content">
-        <!-- Formulario para crear institución -->
+        <!-- Formulario para crear personal -->
     <mat-card class="table-card">
       <mat-card-content>
         <div class="table-container">
@@ -45,15 +45,21 @@
               <td mat-cell *matCellDef="let personal">{{ personal.cargo }}</td>
             </ng-container>
 
+             <!-- Fecha Column -->
+          <ng-container matColumnDef="fecha_ingreso">
+            <th mat-header-cell *matHeaderCellDef>Fecha</th>
+            <td mat-cell *matCellDef="let personal">{{ personal.fecha_ingreso | date:'shortDate' }}</td>
+          </ng-container>
+
             <!-- Estado Column -->
-            <ng-container matColumnDef="estado">
-              <th mat-header-cell *matHeaderCellDef>Estado</th>
-              <td mat-cell *matCellDef="let personal">
-                <span [class]="personal.estado ? 'estado-activo' : 'estado-inactivo'">
-                  {{ personal.estado ? 'Activo' : 'Inactivo' }}
-                </span>
-              </td>
-            </ng-container>
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let personal">
+          <span [class]="getEstadoClass(personal.estado)">
+            {{ getEstadoTexto(personal.estado) }}
+    </span>
+  </td>
+</ng-container>
 
             <!-- Acciones Column -->
             <ng-container matColumnDef="acciones">
