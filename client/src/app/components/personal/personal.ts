@@ -26,7 +26,7 @@ import { NuevoPersonalDialogComponent } from './nuevo-personal-dialog/nuevo-pers
   styleUrls: ['./personal.scss']
 })
 export class PersonalComponent implements OnInit {
-  displayedColumns: string[] = ['id', 'nombre', 'apellido', 'cedula', 'cargo', 'estado', 'acciones'];
+  displayedColumns: string[] = ['id', 'nombre', 'apellido', 'cedula', 'cargo', 'fecha_ingreso', 'estado', 'acciones'];
   personal: Personal[] = [];
 
   constructor(private personalService: PersonalService, private dialog: MatDialog) {}
@@ -68,4 +68,34 @@ export class PersonalComponent implements OnInit {
       error: err => console.error('Error al eliminar', err)
     });
   }
+
+
+  // Métodos para mostrar estado
+  getEstadoTexto(estado: string): string {
+    switch (estado) {
+      case 'estado-activo':
+        return 'Activo';
+      case 'estado-inactivo':
+        return 'Inactivo';
+      case 'estado-baja':
+        return 'Baja Temporal';
+      default:
+        return 'Desconocido';
+    }
+  }
+
+  getEstadoClass(estado: string): string {
+    switch (estado) {
+      case 'estado-activo':
+        return 'estado-activo';
+      case 'estado-inactivo':
+        return 'estado-inactivo';
+      case 'estado-baja':
+        return 'estado-baja';
+      default:
+        return '';
+    }
+  }
+
+
 }

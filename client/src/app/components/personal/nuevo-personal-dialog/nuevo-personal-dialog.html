@@ -28,12 +28,20 @@
 
     <mat-form-field appearance="fill" class="full-width">
       <mat-label>Fecha de ingreso</mat-label>
-      <input matInput [matDatepicker]="picker" formControlName="fecha_ingreso">
-      <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+      <input matInput [matDatepicker]="picker" formControlName="fecha_ingreso" />
+      <mat-datepicker-toggle matSuffix [for]="picker" (click)="openPicker()"></mat-datepicker-toggle>
       <mat-datepicker #picker></mat-datepicker>
     </mat-form-field>
-  </form>
-</mat-dialog-content>
+
+    <mat-form-field appearance="fill" class="full-width">
+      <mat-label>Estado</mat-label>
+      <mat-select formControlName="estado">
+        <mat-option value="estado-activo">Activo</mat-option>
+        <mat-option value="estado-inactivo">Inactivo</mat-option>
+        <mat-option value="estado-baja">Baja Temporal</mat-option>
+      </mat-select>
+    </mat-form-field>
+
 
 <mat-dialog-actions align="end">
   <button mat-button (click)="cancelar()">Cancelar</button>

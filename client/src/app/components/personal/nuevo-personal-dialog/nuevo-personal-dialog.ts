@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { PersonalService } from '../../../services/personal';
@@ -10,6 +10,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
+import { MatDatepicker } from '@angular/material/datepicker';
 
 @Component({
   selector: 'app-nuevo-personal-dialog',
@@ -32,6 +33,8 @@ export class NuevoPersonalDialogComponent implements OnInit {
   form!: FormGroup;
   esEdicion: boolean;
 
+  @ViewChild('picker') picker!: MatDatepicker<Date>;
+
   constructor(
     private fb: FormBuilder,
     private personalService: PersonalService,
@@ -41,20 +44,29 @@ export class NuevoPersonalDialogComponent implements OnInit {
     this.esEdicion = !!this.data;
   }
 
+  openPicker() {
+    if (this.picker) {
+      this.picker.open(); // 👈 Método para abrir manualmente el picker
+    }
+  }
+
+  
   ngOnInit(): void {
     this.form = this.fb.group({
       nombre: ['', Validators.required],
       apellido: ['', Validators.required],
       cedula: ['', Validators.required],
       cargo: ['', Validators.required],
-      fecha_ingreso: ['', Validators.required],
-      estado: [true],
+      estado: ['estado-activo', Validators.required],
+      fecha_ingreso: [new Date(), Validators.required],
       email: [''],
       telefono: ['']
     });
 
     if (this.esEdicion) this.form.patchValue(this.data!);
   }
+
+  
 
   guardar(): void {
     if (this.form.invalid) return;
